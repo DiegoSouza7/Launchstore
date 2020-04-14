@@ -3,7 +3,6 @@ const { compare } = require('bcryptjs')
 
 function checkAllFields(body) {
     const keys = Object.keys(body)
-    
         for(key of keys) {
             if (body[key] == '') {
                 return {
@@ -16,7 +15,7 @@ function checkAllFields(body) {
 
 module.exports = {
     async post(req, res, next) {
-        const fillAllFields = checkAllfields(req.body)
+        const fillAllFields = checkAllFields(req.body)
         if (fillAllFields) {
             return res.render('user/register', fillAllFields)
         }
