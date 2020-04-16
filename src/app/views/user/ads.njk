@@ -10,7 +10,7 @@
         {% for product in products %}
             <div class="item">
                 <div class="image"
-                    style="background-image: url({{product.img}})"
+                    style="background-image: url({{product.img if product.img else '//placehold.it/500x360'}})"
                 >
                 </div>
 

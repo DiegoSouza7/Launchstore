@@ -112,3 +112,49 @@ DELETE FROM files;
 ALTER SEQUENCE products_id_seq RESTART WITH 1;
 ALTER SEQUENCE users_id_seq RESTART WITH 1;
 ALTER SEQUENCE files_id_seq RESTART WITH 1;
+
+-- create orders (pedido)
+CREATE TABLE "orders" (
+  "id" SERIAL PRIMARY KEY,
+  "seller_id" int NOT NULL,
+  "buyer_id" int NOT NULL,
+  "product_id" int NOT NULL,
+  "price" int NOT NULL,
+  "quantity" int DEFAULT 0,
+  "total" int NOT NULL,
+  "status" text NOT NULL,
+  "created_at" timestamp DEFAULT (now()),
+  "updated_at" timestamp DEFAULT (now())
+);
+
+ALTER TABLE "orders" ADD FOREIGN KEY ("seller_id") REFERENCES "users" ("id");
+ALTER TABLE "orders" ADD FOREIGN KEY ("buyer_id") REFERENCES "users" ("id");
+ALTER TABLE "orders" ADD FOREIGN KEY ("product_id") REFERENCES "products" ("id");
+
+CREATE TRIGGER set_timestamp
+BEFORE UPDATE ON orders
+FOR EACH ROW
+EXECUTE PROCEDURE trigger_set_timestamp();
+
+-- implement soft delete on products
+-- 1. Add column deleted_at as timestamp
+ALTER TABLE products ADD COLUMN "deleted_at" timestamp;
+
+-- 2. create a RULE that will run every time you try to delete some product
+-- https://coderwall.com/p/vezbtq/soft-delete-in-postgresql-using-rules
+CREATE OR REPLACE RULE delete_product AS
+ON DELETE TO products DO INSTEAD
+UPDATE products
+SET deleted_at = now()
+WHERE products.id = old.id;
+
+-- 3. Create a view where you can get only active records
+-- love this way: http://shuber.io/porting-activerecord-soft-delete-behavior-to-postgres/
+CREATE VIEW products_without_deleted AS  
+SELECT * FROM products WHERE deleted_at IS NULL;
+
+-- 4. Rename Table and Views
+-- Most of the time we want to work with active users, not ALL users including the deleted ones. 
+-- For convenience, let's rename our table and view.
+ALTER TABLE products RENAME TO products_with_deleted;  
+ALTER VIEW products_without_deleted RENAME TO products;
